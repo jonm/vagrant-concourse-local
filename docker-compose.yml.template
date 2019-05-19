@@ -1,0 +1,62 @@
+# Copyright 2019 Jonathan T. Moore
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: '2'
+
+services:
+  vault:
+    image: vault
+    command: server
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    volumes:
+      - "vault-data:/vault/file"
+    environment:
+      - VAULT_LOCAL_CONFIG={"backend":{"file":{"path":"/vault/file"}}, "listener":{"tcp":{"address":"0.0.0.0:8200","tls_disable":1}}, "default_lease_ttl":"168h", "max_lease_ttl":"720h"}
+    restart: always
+
+  
+  concourse-db:
+    image: postgres
+    environment:
+    - POSTGRES_DB=concourse
+    - POSTGRES_PASSWORD=%CONCOURSE_POSTGRES_PASSWORD%
+    - POSTGRES_USER=concourse_user
+    - PGDATA=/database
+    volumes:
+      - "concourse-data:/database"
+    restart: always
+
+  concourse:
+    image: concourse/concourse:4.2.1
+    command: quickstart
+    privileged: true
+    depends_on: [concourse-db,vault]
+    ports: ["8080:8080"]
+    environment:
+    - CONCOURSE_POSTGRES_HOST=concourse-db
+    - CONCOURSE_POSTGRES_USER=concourse_user
+    - CONCOURSE_POSTGRES_PASSWORD=%CONCOURSE_POSTGRES_PASSWORD%
+    - CONCOURSE_POSTGRES_DATABASE=concourse
+    - CONCOURSE_ADD_LOCAL_USER=%CONCOURSE_ADD_LOCAL_USER%
+    - CONCOURSE_MAIN_TEAM_LOCAL_USER=%CONCOURSE_MAIN_TEAM_LOCAL_USER%
+    - CONCOURSE_VAULT_URL=http://vault:8200
+    - CONCOURSE_VAULT_CLIENT_TOKEN=%CONCOURSE_VAULT_CLIENT_TOKEN%
+    restart: always
+
+volumes:
+  concourse-data:
+  vault-data:
