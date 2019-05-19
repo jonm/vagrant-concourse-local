@@ -24,7 +24,7 @@ Docker directly.
    you can use for logging into the Vault instance this spins up.
 
 3. Clone this repository into a subdirectory of your *Windows* home
-   directory. I put it at `C:\Users\Jon\src\concourse`.
+   directory. I put it at `C:\Users\Jon\Documents\src\concourse`.
 
 4. Make sure you have the native Windows version of Vagrant installed,
    as well as VirtualBox (I had VirtualBox installed as part of
