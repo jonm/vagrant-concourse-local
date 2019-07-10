@@ -11,7 +11,7 @@ Docker directly.
 
 1. Set the environment variable `CONCOURSE_ADD_LOCAL_USER` to a string that
    looks like `user:pass`. On Windows, you can do this from a `cmd`
-   prompt that is running as Adminstrator with:
+   prompt that is **running as Adminstrator** with:
 
    ```
    C:\> setx -m CONCOURSE_ADD_LOCAL_USER "myuser:mypassword"
