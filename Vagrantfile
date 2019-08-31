@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
 
     mkdir /etc/concourse.d
 
-    vault token create --policy concourse --period=168h > /etc/concourse.d/vault-token.log
+    vault token create --policy concourse --period=720h > /etc/concourse.d/vault-token.log
     CONCOURSE_VAULT_CLIENT_TOKEN=`cat /etc/concourse.d/vault-token.log | awk '$1 == "token" { print $2}'`
 
     cat docker-compose.yml.template | \

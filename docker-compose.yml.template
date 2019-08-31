@@ -41,7 +41,7 @@ services:
     restart: always
 
   concourse:
-    image: concourse/concourse:4.2.1
+    image: concourse/concourse:5.4.1
     command: quickstart
     privileged: true
     depends_on: [concourse-db,vault]
@@ -55,6 +55,8 @@ services:
     - CONCOURSE_MAIN_TEAM_LOCAL_USER=%CONCOURSE_MAIN_TEAM_LOCAL_USER%
     - CONCOURSE_VAULT_URL=http://vault:8200
     - CONCOURSE_VAULT_CLIENT_TOKEN=%CONCOURSE_VAULT_CLIENT_TOKEN%
+    - CONCOURSE_MAX_BUILD_LOGS_TO_RETAIN=5
+    - CONCOURSE_MAX_DAYS_TO_RETAIN_BUILD_LOGS=30
     restart: always
 
 volumes:
