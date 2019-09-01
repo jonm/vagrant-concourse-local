@@ -77,7 +77,7 @@ Vagrant.configure("2") do |config|
     apt-get install -y docker-ce docker-compose
     usermod -aG docker vagrant
 
-    apt-get -y install unzip openssl
+    apt-get -y install unzip openssl ntp
 
     wget -q https://releases.hashicorp.com/vault/1.1.2/vault_1.1.2_linux_amd64.zip
     unzip vault_*.zip
