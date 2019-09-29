@@ -23,7 +23,7 @@ services:
     ports:
       - "8200:8200"
     volumes:
-      - "vault-data:/vault/file"
+      - "/opt/vault-data:/vault/file"
     environment:
       - VAULT_LOCAL_CONFIG={"backend":{"file":{"path":"/vault/file"}}, "listener":{"tcp":{"address":"0.0.0.0:8200","tls_disable":1}}, "default_lease_ttl":"168h", "max_lease_ttl":"720h"}
     restart: always
@@ -35,9 +35,9 @@ services:
     - POSTGRES_DB=concourse
     - POSTGRES_PASSWORD=%CONCOURSE_POSTGRES_PASSWORD%
     - POSTGRES_USER=concourse_user
-    - PGDATA=/database
+    - PGDATA=/database/pgdata
     volumes:
-      - "concourse-data:/database"
+      - "/opt/concourse-data:/database"
     restart: always
 
   concourse:
@@ -58,7 +58,3 @@ services:
     - CONCOURSE_MAX_BUILD_LOGS_TO_RETAIN=5
     - CONCOURSE_MAX_DAYS_TO_RETAIN_BUILD_LOGS=30
     restart: always
-
-volumes:
-  concourse-data:
-  vault-data:

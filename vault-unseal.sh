@@ -15,8 +15,8 @@
 # limitations under the License.
 
 export VAULT_ADDR=http://127.0.0.1:8200
-if [ -f /etc/vault.d/init.log ]; then
-    /usr/local/bin/vault operator unseal `cat /etc/vault.d/init.log | awk '/Unseal Key 1/ { print $4}'`
-    /usr/local/bin/vault operator unseal `cat /etc/vault.d/init.log | awk '/Unseal Key 2/ { print $4}'`
-    /usr/local/bin/vault operator unseal `cat /etc/vault.d/init.log | awk '/Unseal Key 3/ { print $4}'`
+if [ -f /opt/vault-data/init.log ]; then
+    /usr/local/bin/vault operator unseal `cat /opt/vault-data/init.log | awk '/Unseal Key 1/ { print $4}'`
+    /usr/local/bin/vault operator unseal `cat /opt/vault-data/init.log | awk '/Unseal Key 2/ { print $4}'`
+    /usr/local/bin/vault operator unseal `cat /opt/vault-data/init.log | awk '/Unseal Key 3/ { print $4}'`
 fi

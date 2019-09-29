@@ -25,12 +25,14 @@ Docker directly.
 
 3. Clone this repository into a subdirectory of your *Windows* home
    directory. I put it at `C:\Users\Jon\Documents\src\concourse`.
-
-4. Make sure you have the native Windows version of Vagrant installed,
+   
+5. Make sure you have the native Windows version of Vagrant installed,
    as well as VirtualBox (I had VirtualBox installed as part of
    installing Docker Toolbox on Windows Home edition).
 
-5. `vagrant up`
+6. `vagrant up`. This must _also_ be run from a `cmd` prompt that is
+   **running as Administrator** so that the permissions and symlinks
+   work properly.
 
 ## More details
 
@@ -53,15 +55,20 @@ A few notes on the configuration:
   forwarded properly so you should be able to `vault login` against
   `http://127.0.0.1:8200` from a WSL bash prompt (yay!).
 
-* Everything should restart if you `vagrant halt` and `vagrant up`,
-  although you will need to unseal the vault after boot. You can do
-  this via:
-  ```
-  C:\wherever>vagrant ssh
-  vagrant@ubuntu-xenial:~$ /usr/local/bin/vault-unseal.sh
-  ```
+* Everything should restart if you `vagrant halt` and `vagrant up`.
 
 * You can use the default `http://127.0.0.1:8080/` Concourse URL.
 
+* Two directories will be created on the host (Windows) machine in this
+  directory: `concourse-data` and `vault-data`. These are, respectively,
+  where the data for the Concourse Postgres database and the Vault
+  instance are ultimately mounted. `concourse-data` is mounted via SMB
+  so that symlinks work properly; this will require you to enter
+  your Windows credentials when the VM is booting.
   
+  The main advantages of having these filesystems external to the VM are:
+  1. Not running out of disk space as easily.
+  2. Being able to `vagrant destroy` and `vagrant up` without losing your
+     configured pipelines or stored credentials.
+
    

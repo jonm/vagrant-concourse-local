@@ -55,6 +55,9 @@ Vagrant.configure("2") do |config|
   config.vm.provision "file", source: "vault-unseal.sh", destination: "vault-unseal.sh"
   config.vm.provision "file", source: "concourse-policy.hcl", destination: "concourse-policy.hcl"
   config.vm.provision "file", source: "admins-policy.hcl", destination: "admins-policy.hcl"
+
+  config.vm.synced_folder "concourse-data", "/opt/concourse-data", create: true, type: "smb", mount_options: ["uid=999","forceuid","file_mode=0700","dir_mode=0700"]
+  config.vm.synced_folder "vault-data", "/opt/vault-data", create: true
   
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
@@ -84,13 +87,18 @@ Vagrant.configure("2") do |config|
     mkdir -p /usr/local/bin
     mv vault /usr/local/bin
 
-    iface=`ifconfig -s | cut -d ' ' -f 1 | egrep -v '^Iface$|^docker|^lo$'`
+    iface=`ifconfig -s | cut -d ' ' -f 1 | egrep  '^enp'`
     ipaddr=`ip addr show | awk '/'$iface'/ { ready=1 } ready && /inet / { print $2; ready=0}' | cut -d / -f 1`
 
     mv vault-unseal.sh /usr/local/bin
     chmod +x /usr/local/bin/vault-unseal.sh
 
-    export CONCOURSE_POSTGRES_PASSWORD=`openssl rand -hex 12`
+    if [ -f /opt/concourse-data/postgres_user ]; then
+      export CONCOURSE_POSTGRES_PASSWORD=`cat /opt/concourse-data/postgres_user`
+    else
+      export CONCOURSE_POSTGRES_PASSWORD=`openssl rand -hex 12`
+      echo -n "$CONCOURSE_POSTGRES_PASSWORD" > /opt/concourse-data/postgres_user
+    fi
 
     # N.B. First time around we generate a random token until we have
     # properly initialized Vault
@@ -104,21 +112,42 @@ Vagrant.configure("2") do |config|
 
     docker-compose up -d
 
-    mkdir /etc/vault.d
+    i=1
+    while ! nc -zv 127.0.0.1 8200; do
+      i=$((i+1))
+      echo "Waiting for Vault to listen on port (attempt $i)..."
+      true
+    done
       
-    export VAULT_ADDR=http://127.0.0.1:8200
-    sleep 3
-    vault operator init > /etc/vault.d/init.log
-    /usr/local/bin/vault-unseal.sh
-    vault login `cat /etc/vault.d/init.log | awk '/Initial Root Token/ { print $4}'`
-    vault secrets enable -version=1 -path=concourse kv
+    VAULT_ADDR=http://127.0.0.1:8200; export VAULT_ADDR
+    i=1
+    while true; do
+      status=$(vault status >/dev/null 2>&1; echo $?)
+      if [ "$status" != 1 ]; then
+        break
+      fi
+      i=$((i+1))
+      echo "Waiting for Vault to report status (attempt $i)..."
+      sleep 1
+    done      
 
-    vault policy write concourse concourse-policy.hcl
-    vault policy write admins admins-policy.hcl
-    vault auth enable userpass
-    vault write auth/userpass/users/$VAULT_ADMIN_USER password=$VAULT_ADMIN_PASS policies=admins
+    if [ ! -f /opt/vault-data/init.log ]; then
 
-    mkdir /etc/concourse.d
+      VAULT_ADDR=http://127.0.0.1:8200 vault operator init > /opt/vault-data/init.log
+      /usr/local/bin/vault-unseal.sh
+      vault login `cat /opt/vault-data/init.log | awk '/Initial Root Token/ { print $4}'`
+      vault secrets enable -version=1 -path=concourse kv
+
+      vault policy write concourse concourse-policy.hcl
+      vault policy write admins admins-policy.hcl
+      vault auth enable userpass
+      vault write auth/userpass/users/$VAULT_ADMIN_USER password=$VAULT_ADMIN_PASS policies=admins
+    else
+      /usr/local/bin/vault-unseal.sh
+      vault login `cat /opt/vault-data/init.log | awk '/Initial Root Token/ { print $4}'`
+    fi
+
+    mkdir -p /etc/concourse.d
 
     vault token create --policy concourse --period=720h > /etc/concourse.d/vault-token.log
     CONCOURSE_VAULT_CLIENT_TOKEN=`cat /etc/concourse.d/vault-token.log | awk '$1 == "token" { print $2}'`
@@ -133,5 +162,29 @@ Vagrant.configure("2") do |config|
     docker-compose up -d
 
     echo "export VAULT_ADDR=http://127.0.0.1:8200" >> ~vagrant/.bashrc
+  SHELL
+
+  config.vm.provision "shell", run: "always", inline: <<-SHELL
+    i=1
+    while ! nc -zv 127.0.0.1 8200; do
+      i=$((i+1))
+      echo "Waiting for Vault to listen on port 8200 (attempt $i)..."
+      true
+    done
+
+    VAULT_ADDR=http://127.0.0.1:8200; export VAULT_ADDR
+
+    i=1
+    while true; do
+      vault status
+      if [ $? != 1 ]; then
+        break
+      fi
+      i=$((i+1))
+      echo "Waiting for Vault to report status (attempt $i)..."
+      sleep 1
+    done      
+      
+    /usr/local/bin/vault-unseal.sh
   SHELL
 end
