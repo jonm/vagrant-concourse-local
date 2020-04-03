@@ -30,7 +30,11 @@ Docker directly.
    as well as VirtualBox (I had VirtualBox installed as part of
    installing Docker Toolbox on Windows Home edition).
 
-6. `vagrant up`. This must _also_ be run from a `cmd` prompt that is
+6. `vagrant plugin install vagrant-disksize`. This allows us to
+   modify the size of the disk that gets configured; the default
+   10GB disk can run out of space quickly.
+
+7. `vagrant up`. This must _also_ be run from a `cmd` prompt that is
    **running as Administrator** so that the permissions and symlinks
    work properly.
 
