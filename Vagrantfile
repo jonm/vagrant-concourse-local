@@ -166,10 +166,13 @@ Vagrant.configure("2") do |config|
   SHELL
 
   config.vm.provision "shell", run: "always", inline: <<-SHELL
+    docker-compose up -d
+
     i=1
     while ! nc -zv 127.0.0.1 8200; do
       i=$((i+1))
       echo "Waiting for Vault to listen on port 8200 (attempt $i)..."
+      sleep 1
       true
     done
 
